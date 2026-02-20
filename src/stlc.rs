@@ -76,16 +76,16 @@ impl std::fmt::Display for Type {
 
 type Gamma = std::collections::HashMap<String, Type>;
 
-fn check_type<'a>(gamma: &Gamma, expr: &Expression, type_expected: &Type) -> bool {
+fn check_type(gamma: &Gamma, expr: &Expression, type_expected: &Type) -> bool {
     match expr {
         Expression::Condition {
             cond,
-            true_branch: t,
-            false_branch: f,
+            true_branch,
+            false_branch,
         } => {
             check_type(gamma, cond, &Type::Bool)
-                && check_type(gamma, t, type_expected)
-                && check_type(gamma, f, type_expected)
+                && check_type(gamma, true_branch, type_expected)
+                && check_type(gamma, false_branch, type_expected)
         }
         Expression::Abstraction(varname, body) => match type_expected {
             Type::Function(from, to) => {
@@ -104,11 +104,11 @@ fn infer_type(gamma: &Gamma, expr: &Expression) -> Option<Type> {
         Expression::Variable(varname) => gamma.get(varname).cloned(),
         Expression::True | Expression::False => Some(Type::Bool),
         Expression::Annotation {
-            expression: e,
-            with: t,
+            expression,
+            with: with_type,
         } => {
-            if check_type(gamma, e, t) {
-                Some(t.clone())
+            if check_type(gamma, expression, with_type) {
+                Some(with_type.clone())
             } else {
                 None
             }
